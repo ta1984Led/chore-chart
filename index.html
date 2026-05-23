@@ -1,0 +1,640 @@
+<!DOCTYPE html>
+<html lang="he" dir="rtl">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<meta name="apple-mobile-web-app-capable" content="yes">
+<meta name="apple-mobile-web-app-status-bar-style" content="default">
+<meta name="apple-mobile-web-app-title" content="לוח הכוכבים">
+<title>לוח הכוכבים שלי</title>
+<link href="https://fonts.googleapis.com/css2?family=Rubik:wght@400;500;600;700;800;900&family=Fredoka+One&display=swap" rel="stylesheet">
+<style>
+*{box-sizing:border-box;margin:0;padding:0}
+body{font-family:'Rubik','Segoe UI',sans-serif;background:linear-gradient(135deg,#E3F2FD 0%,#F3E5F5 50%,#FFF8E1 100%);min-height:100vh;padding:24px 12px}
+.container{max-width:940px;margin:0 auto}
+h1{font-family:'Fredoka One','Rubik',sans-serif;font-size:32px;color:#1565C0;text-align:center;text-shadow:2px 2px 0 #BBDEFB;letter-spacing:1px;margin-bottom:10px}
+.inputs{display:flex;gap:12px;justify-content:center;flex-wrap:wrap;margin-bottom:8px}
+.inputs input{padding:8px 14px;border-radius:20px;font-family:'Rubik',sans-serif;font-size:15px;text-align:center;background:#fff;direction:rtl;outline:none}
+.inputs input:first-child{border:2px solid #90CAF9;width:150px}
+.inputs input:last-child{border:2px solid #CE93D8;width:190px}
+#encouragement{font-size:17px;color:#6A1B9A;font-weight:600;text-align:center;margin:6px 0 14px;min-height:26px}
+.sync-status{text-align:center;font-size:12px;margin-bottom:10px}
+.sync-dot{display:inline-block;width:8px;height:8px;border-radius:50%;margin-left:4px;vertical-align:middle}
+.sync-dot.online{background:#43A047}
+.sync-dot.offline{background:#EF5350}
+.table-wrap{overflow-x:auto;border-radius:16px;box-shadow:0 4px 24px rgba(0,0,0,0.08)}
+table{width:100%;border-collapse:separate;border-spacing:0;background:#fff;border-radius:16px;overflow:hidden;min-width:740px}
+thead th{padding:12px 6px;font-size:13px;font-weight:700;color:#fff;text-align:center}
+th.task-header{background:#1565C0;position:sticky;right:0;z-index:2;min-width:140px}
+th.day-header{background:#1976D2;min-width:88px}
+th.day-header.shabbat{background:#7B1FA2}
+th.total-header{background:#0D47A1;min-width:56px}
+td.task-name{padding:8px 8px;font-weight:600;font-size:13px;border-left:3px solid #E3F2FD;position:sticky;right:0;z-index:1;white-space:nowrap}
+td.task-name .emoji{font-size:18px;margin-left:5px}
+tr.regular:nth-child(odd) td{background:#FAFAFA}
+tr.regular:nth-child(even) td{background:#fff}
+td.score-cell{padding:6px 3px;text-align:center}
+.score-buttons{display:flex;gap:2px;justify-content:center;flex-wrap:wrap}
+.score-btn{width:27px;height:27px;border-radius:50%;border:1.5px solid #CFD8DC;background:#fff;color:#78909C;font-weight:500;font-size:12px;cursor:pointer;transition:all .15s ease;font-family:'Rubik',sans-serif;padding:0;line-height:27px}
+.score-btn.active{border:2.5px solid #1565C0;color:#fff;font-weight:800}
+.score-btn.active[data-val="0"]{background:#EF5350}
+.score-btn.active[data-val="1"],.score-btn.active[data-val="2"]{background:#FFA726}
+.score-btn.active[data-val="3"],.score-btn.active[data-val="4"]{background:#66BB6A}
+.score-btn.active[data-val="5"]{background:#42A5F5}
+td.row-total{text-align:center;padding:6px}
+td.row-total .num{font-weight:800;font-size:15px;color:#1565C0}
+td.row-total .max{font-size:10px;color:#90A4AE}
+.no-chug-btn{display:block;margin:3px auto 0;padding:2px 7px;border-radius:10px;border:1.5px solid #B0BEC5;background:#ECEFF1;color:#78909C;font-family:'Rubik',sans-serif;font-size:10px;font-weight:600;cursor:pointer;transition:all .15s}
+.no-chug-btn.active{background:#78909C;color:#fff;border-color:#546E7A}
+.chug-disabled .score-btn{opacity:.25;pointer-events:none}
+tr.bonus td{background:linear-gradient(90deg,#FFF8E1,#FFFDE7,#FFF8E1)!important;border-top:2.5px dashed #FFD54F;border-bottom:2.5px dashed #FFD54F}
+tr.bonus td.task-name{background:linear-gradient(90deg,#FFF8E1,#FFFDE7)!important;color:#E65100;font-weight:800}
+.bonus-badge{display:inline-block;background:linear-gradient(135deg,#FFD700,#FFA000);color:#fff;font-size:9px;font-weight:800;padding:2px 7px;border-radius:10px;margin-right:5px;box-shadow:0 1px 4px rgba(255,160,0,0.3);vertical-align:middle}
+tr.bonus td.row-total .num{color:#E65100}
+.dry-check{width:30px;height:30px;border-radius:50%;border:2.5px solid #CFD8DC;background:#fff;cursor:pointer;transition:all .2s;font-size:16px;line-height:30px;text-align:center;display:inline-block;user-select:none}
+.dry-check.checked{background:linear-gradient(135deg,#FFD700,#FFA000);border-color:#F9A825;box-shadow:0 2px 8px rgba(255,160,0,0.3)}
+.dry-amount{font-size:11px;color:#90A4AE;margin-top:2px;font-weight:600}
+.dry-amount.has{color:#E65100}
+tr.bonus.full-streak td{background:linear-gradient(90deg,#FFF176,#FFD54F,#FFE082,#FFD54F,#FFF176)!important;animation:goldShimmer 2s ease infinite}
+@keyframes goldShimmer{0%,100%{background-position:0% 50%}50%{background-position:100% 50%}}
+tr.separator td{padding:0;height:5px;background:transparent!important;border:none}
+tr.day-totals td{background:#E3F2FD!important}
+tr.day-totals td.task-name{font-weight:800;font-size:13px;color:#0D47A1;background:#E3F2FD!important}
+#grand-total{font-weight:900;font-size:20px;transition:color .3s}
+
+/* Streak box */
+.streak-box{margin-top:16px;background:#fff;border:2.5px solid #FFD54F;border-radius:16px;padding:16px 20px;display:flex;align-items:center;gap:16px;flex-wrap:wrap;justify-content:center}
+.streak-visual{display:flex;gap:4px;flex-wrap:wrap;justify-content:center}
+.streak-dot{width:28px;height:28px;border-radius:50%;border:2px solid #E0E0E0;background:#FAFAFA;display:flex;align-items:center;justify-content:center;font-size:12px;font-weight:700;color:#BDBDBD;transition:all .3s}
+.streak-dot.filled{background:linear-gradient(135deg,#FFD700,#FFA000);border-color:#F9A825;color:#fff;box-shadow:0 1px 4px rgba(255,160,0,0.3)}
+.streak-info{text-align:center}
+.streak-count{font-size:24px;font-weight:900;color:#E65100}
+.streak-label{font-size:13px;color:#795548}
+.streak-reward{font-size:14px;font-weight:700;color:#2E7D32;margin-top:2px}
+.streak-celebration{font-size:18px;font-weight:800;color:#6A1B9A;animation:pulse 1s ease infinite}
+@keyframes pulse{0%,100%{transform:scale(1)}50%{transform:scale(1.06)}}
+
+/* Dry money summary */
+.dry-summary{margin-top:12px;background:linear-gradient(135deg,#FFFDE7,#FFF8E1);border:2px solid #FFD54F;border-radius:16px;padding:14px 20px;text-align:center}
+.dry-summary .dry-total{font-size:28px;font-weight:900;color:#E65100}
+.dry-summary .dry-label{font-size:13px;color:#795548;font-weight:600;margin-top:3px}
+
+.tier-box{margin-top:16px;border-radius:16px;padding:18px 22px;text-align:center;transition:all .4s;border:2.5px solid}
+.tier-box .tier-label{font-size:26px;font-weight:900;margin-bottom:5px}
+.progress-bar{width:100%;height:10px;background:#E0E0E0;border-radius:5px;overflow:hidden}
+.progress-fill{height:100%;border-radius:5px;transition:width .4s,background .4s}
+.tier-reward{margin-top:8px;font-size:15px;color:#455A64;font-weight:500}
+.tier-next{margin-top:5px;font-size:12px;color:#90A4AE}
+.legend{margin-top:14px;background:#fff;border-radius:16px;padding:14px 18px;box-shadow:0 2px 12px rgba(0,0,0,0.05)}
+.legend-title{font-weight:700;font-size:14px;color:#37474F;margin-bottom:8px}
+.legend-row{display:flex;align-items:center;gap:8px;padding:6px 10px;border-radius:10px;margin-bottom:5px;transition:all .3s;border:1px solid #E0E0E0;background:#FAFAFA}
+.legend-row.active{border-width:2px}
+.legend-range{min-width:65px;font-weight:700;font-size:12px;text-align:center}
+.legend-label{font-weight:700;font-size:13px;min-width:110px}
+.legend-desc{font-size:12px;color:#546E7F;flex:1}
+
+/* Archive & Graph */
+.section-title{font-size:18px;font-weight:800;color:#1565C0;margin:24px 0 12px;text-align:center}
+.graph-container{background:#fff;border-radius:16px;padding:20px;box-shadow:0 2px 12px rgba(0,0,0,0.05);margin-bottom:16px}
+.graph-bars{display:flex;align-items:flex-end;gap:8px;height:160px;padding:0 8px;border-bottom:2px solid #E0E0E0}
+.graph-bar-wrap{flex:1;display:flex;flex-direction:column;align-items:center;height:100%;justify-content:flex-end;min-width:40px}
+.graph-bar{width:100%;max-width:48px;border-radius:8px 8px 0 0;transition:height .4s;min-height:2px;position:relative}
+.graph-bar-label{font-size:10px;color:#78909C;margin-top:6px;text-align:center;font-weight:600}
+.graph-bar-value{font-size:11px;font-weight:800;margin-bottom:4px;text-align:center}
+.no-history{text-align:center;color:#90A4AE;font-size:14px;padding:30px}
+
+.btn-row{display:flex;gap:10px;justify-content:center;margin-top:18px;flex-wrap:wrap}
+.action-btn{padding:10px 24px;border-radius:25px;font-family:'Rubik',sans-serif;font-weight:700;font-size:13px;cursor:pointer;transition:all .2s;border:2px solid}
+.reset-btn{border-color:#EF5350;background:#fff;color:#EF5350}
+.reset-btn:hover{background:#EF5350;color:#fff}
+.archive-btn{border-color:#1565C0;background:#E3F2FD;color:#1565C0}
+.archive-btn:hover{background:#1565C0;color:#fff}
+.tips{margin-top:14px;background:#FFF8E1;border-radius:12px;padding:12px 16px;font-size:12px;color:#5D4037;line-height:1.8;border-right:4px solid #FFA726}
+.toast{position:fixed;bottom:24px;left:50%;transform:translateX(-50%);padding:10px 24px;border-radius:20px;font-family:'Rubik',sans-serif;font-weight:600;font-size:14px;box-shadow:0 4px 16px rgba(0,0,0,0.2);opacity:0;transition:opacity .3s;pointer-events:none;z-index:999;color:#fff}
+.toast.show{opacity:1}
+#syncToast{background:#2E7D32}
+#offlineToast{background:#EF5350}
+
+@media(max-width:600px){
+  h1{font-size:26px}
+  .streak-box{flex-direction:column}
+  .graph-bars{height:120px}
+}
+@media print{body{background:#fff;padding:10px}.btn-row,.inputs,.toast,.sync-status{display:none}.table-wrap{box-shadow:none}}
+</style>
+</head>
+<body>
+<div class="container">
+  <h1>🌟 לוח הכוכבים שלי 🌟</h1>
+  <div class="sync-status"><span class="sync-dot" id="syncDot"></span> <span id="syncText">מתחבר...</span></div>
+  <div class="inputs">
+    <input id="childName" placeholder="שם הילד/ה" oninput="onMetaChange()">
+    <input id="weekLabel" placeholder="שבוע (לדוגמה: 12-18.5)" oninput="onMetaChange()">
+  </div>
+  <div id="encouragement"></div>
+  <div class="table-wrap"><table id="mainTable"></table></div>
+
+  <!-- Streak -->
+  <div class="streak-box" id="streakBox"></div>
+
+  <!-- Dry money -->
+  <div class="dry-summary" id="drySummary"></div>
+
+  <!-- Tier -->
+  <div class="tier-box" id="tierBox">
+    <div class="tier-label" id="tierLabel"></div>
+    <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+    <div class="tier-reward" id="tierReward"></div>
+    <div class="tier-next" id="tierNext"></div>
+  </div>
+  <div class="legend" id="legend"></div>
+
+  <!-- Progress Graph -->
+  <div class="section-title" id="graphTitle">📈 התקדמות שבועית</div>
+  <div class="graph-container" id="graphContainer"></div>
+
+  <div class="btn-row">
+    <button class="action-btn archive-btn" onclick="archiveWeek()">📦 סיום שבוע ושמירה</button>
+    <button class="action-btn reset-btn" onclick="resetOnly()">🔄 איפוס בלבד</button>
+  </div>
+  <div class="tips">
+    <strong>💡 טיפים:</strong> 0 = לא בוצע כלל, 1 = צריך הרבה עזרה, 2 = ביצע עם תזכורות רבות, 3 = ביצע עם תזכורת אחת, 4 = ביצע לבד עם קושי, 5 = ביצע לבד ובשמחה!
+    <br>המטרה היא <strong>התקדמות</strong>, לא שלמות. גם 3 זה מעולה!
+    <br>🌈 <strong>״קם יבש״</strong> = ₪20 ליום. סטריק של 10 ימים רצופים = ₪1,000!
+    <br>🏅 בימים ללא חוג לחצו <strong>״אין חוג״</strong>.
+    <br>☁️ כל שינוי מסונכרן אוטומטית לכל המכשירים.
+  </div>
+</div>
+<div class="toast" id="syncToast">✅ מסונכרן!</div>
+<div class="toast" id="offlineToast">⚠️ אופליין — שומר מקומית</div>
+
+<!-- Firebase SDK -->
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-app-compat.js"></script>
+<script src="https://www.gstatic.com/firebasejs/10.14.1/firebase-database-compat.js"></script>
+<script>
+// ===== CONFIG =====
+const firebaseConfig = {
+  apiKey: "AIzaSyAo9w3B8drWhkFeEHpm-zENjBP61nIhclA",
+  authDomain: "chore-chart-e1ca1.firebaseapp.com",
+  databaseURL: "https://chore-chart-e1ca1-default-rtdb.firebaseio.com",
+  projectId: "chore-chart-e1ca1",
+  storageBucket: "chore-chart-e1ca1.firebasestorage.app",
+  messagingSenderId: "99737162",
+  appId: "1:99737162:web:c91fa03a9c7cd6074010b3"
+};
+firebase.initializeApp(firebaseConfig);
+const db = firebase.database();
+
+// ===== CONSTANTS =====
+const TASKS=[
+  {id:"wake",name:"השכמה",emoji:"☀️"},
+  {id:"dress",name:"לבישת בגדים",emoji:"👕"},
+  {id:"room",name:"סידור החדר",emoji:"🏠"},
+  {id:"teeth",name:"צחצוח שיניים",emoji:"🦷"},
+  {id:"shower",name:"מקלחת",emoji:"🚿"},
+  {id:"endday",name:"סגירת יום",emoji:"🌙"},
+  {id:"behave",name:"התנהגות",emoji:"😊"},
+];
+const CHUG={id:"chug",name:"השתתפות בחוג",emoji:"🏅"};
+const DRY={id:"dry",name:"קם יבש",emoji:"🌈"};
+const DAYS=["ראשון","שני","שלישי","רביעי","חמישי","שישי","שבת"];
+const DEFAULT_NO_CHUG={0:false,1:true,2:false,3:false,4:true,5:true,6:true};
+const STREAK_TARGET=10;
+const TIER_PCTS=[
+  {pMin:0,pMax:.25,label:"🌱 מתחילים!",color:"#78909C",bg:"#ECEFF1",reward:"חיבוק + מדבקה על הלוח"},
+  {pMin:.251,pMax:.45,label:"⭐ בדרך הנכונה!",color:"#F9A825",bg:"#FFF8E1",reward:"חבר ללינה / יציאה לפארק שעשועים"},
+  {pMin:.451,pMax:.65,label:"🔥 כוכב עולה!",color:"#EF6C00",bg:"#FFF3E0",reward:"30 דק׳ מסך נוסף / גלידה"},
+  {pMin:.651,pMax:.85,label:"🏆 אלוף!",color:"#2E7D32",bg:"#E8F5E9",reward:"לבחור סרט למשפחה / צעצוע קטן"},
+  {pMin:.851,pMax:1,label:"💎 סופר סטאר!",color:"#6A1B9A",bg:"#F3E5F5",reward:"טיול מיוחד / משאלה גדולה!"},
+];
+
+// ===== STATE =====
+let state={scores:{},dry:{},noChug:{},childName:"",weekLabel:""};
+let meta={carryStreak:0};
+let archive={};
+let isOnline=false;
+
+function defaultScores(){
+  const s={};
+  TASKS.forEach(t=>{s[t.id]={};for(let i=0;i<7;i++)s[t.id][i]=null;});
+  s[CHUG.id]={};for(let i=0;i<7;i++)s[CHUG.id][i]=null;
+  return s;
+}
+function defaultDry(){const d={};for(let i=0;i<7;i++)d[i]=false;return d;}
+function defaultNoChug(){return{...DEFAULT_NO_CHUG};}
+function defaultState(){return{scores:defaultScores(),dry:defaultDry(),noChug:defaultNoChug(),childName:"",weekLabel:""};}
+
+// ===== FIREBASE LISTENERS =====
+db.ref('.info/connected').on('value',snap=>{
+  isOnline=snap.val()===true;
+  document.getElementById('syncDot').className='sync-dot '+(isOnline?'online':'offline');
+  document.getElementById('syncText').textContent=isOnline?'מחובר':'אופליין';
+});
+
+db.ref('currentWeek').on('value',snap=>{
+  const d=snap.val();
+  if(d){
+    state.scores=d.scores||defaultScores();
+    state.dry=d.dry||defaultDry();
+    state.noChug=d.noChug||defaultNoChug();
+    state.childName=d.childName||"";
+    state.weekLabel=d.weekLabel||"";
+    // Fix nulls
+    TASKS.forEach(t=>{if(!state.scores[t.id])state.scores[t.id]={};for(let i=0;i<7;i++)if(state.scores[t.id][i]===undefined)state.scores[t.id][i]=null;});
+    if(!state.scores[CHUG.id])state.scores[CHUG.id]={};
+    for(let i=0;i<7;i++){
+      if(state.scores[CHUG.id][i]===undefined)state.scores[CHUG.id][i]=null;
+      if(state.dry[i]===undefined)state.dry[i]=false;
+      if(state.noChug[i]===undefined)state.noChug[i]=DEFAULT_NO_CHUG[i];
+    }
+  }else{
+    state=defaultState();
+  }
+  document.getElementById('childName').value=state.childName;
+  document.getElementById('weekLabel').value=state.weekLabel;
+  updateUI();
+});
+
+db.ref('meta').on('value',snap=>{
+  meta=snap.val()||{carryStreak:0};
+  if(meta.carryStreak===undefined)meta.carryStreak=0;
+  updateUI();
+});
+
+db.ref('archive').on('value',snap=>{
+  archive=snap.val()||{};
+  updateGraph();
+});
+
+// ===== FIREBASE WRITES =====
+function fbSet(path,val){db.ref(path).set(val);}
+function onMetaChange(){
+  state.childName=document.getElementById('childName').value;
+  state.weekLabel=document.getElementById('weekLabel').value;
+  fbSet('currentWeek/childName',state.childName);
+  fbSet('currentWeek/weekLabel',state.weekLabel);
+  updateEncouragement();
+}
+
+function toggleScore(tid,day,val){
+  const cur=state.scores[tid]?state.scores[tid][day]:null;
+  const nv=cur===val?null:val;
+  state.scores[tid][day]=nv;
+  fbSet(`currentWeek/scores/${tid}/${day}`,nv);
+  updateUI();
+}
+
+function toggleDry(day){
+  state.dry[day]=!state.dry[day];
+  fbSet(`currentWeek/dry/${day}`,state.dry[day]);
+  updateUI();
+}
+
+function toggleNoChug(day){
+  state.noChug[day]=!state.noChug[day];
+  if(state.noChug[day])state.scores[CHUG.id][day]=null;
+  fbSet(`currentWeek/noChug/${day}`,state.noChug[day]);
+  fbSet(`currentWeek/scores/chug/${day}`,null);
+  updateUI();
+}
+
+// ===== CALCULATIONS =====
+function getMaxScore(){
+  const chugActive=DAYS.filter((_,i)=>!state.noChug[i]).length;
+  return TASKS.length*5*7+chugActive*5;
+}
+
+function getPointsTotal(){
+  let s=0;
+  TASKS.forEach(t=>DAYS.forEach((_,i)=>s+=(state.scores[t.id]&&state.scores[t.id][i])||0));
+  DAYS.forEach((_,i)=>{if(!state.noChug[i])s+=(state.scores[CHUG.id]&&state.scores[CHUG.id][i])||0;});
+  return s;
+}
+
+function getCurrentDryStreak(){
+  // Count consecutive dry days from day 0 of current week
+  let consecutive=0;
+  for(let i=0;i<7;i++){
+    if(state.dry[i]){consecutive++;}
+    else break;
+  }
+  // If day 0 is dry, add carry from previous weeks
+  if(state.dry[0]&&meta.carryStreak>0){
+    return meta.carryStreak+consecutive;
+  }
+  // If day 0 is not dry, find last consecutive run
+  if(!state.dry[0]){
+    consecutive=0;
+    for(let i=6;i>=0;i--){
+      if(state.dry[i])consecutive++;
+      else break;
+    }
+    // But this doesn't connect to carry, so it's just the current run
+    // Actually find the latest consecutive run ending at the last filled dry day
+    let bestEnd=-1;
+    for(let i=6;i>=0;i--){if(state.dry[i]){bestEnd=i;break;}}
+    if(bestEnd===-1)return 0;
+    consecutive=0;
+    for(let i=bestEnd;i>=0;i--){
+      if(state.dry[i])consecutive++;
+      else break;
+    }
+    return consecutive;
+  }
+  return consecutive;
+}
+
+function getDryDaysCount(){
+  return DAYS.filter((_,i)=>state.dry[i]).length;
+}
+
+function getDryMoney(){
+  const streak=getCurrentDryStreak();
+  const days=getDryDaysCount();
+  if(streak>=STREAK_TARGET)return 1000;
+  return days*20;
+}
+
+function getTierRanges(){
+  const mx=getMaxScore();
+  return TIER_PCTS.map(t=>({...t,min:Math.floor(t.pMin*mx),max:Math.ceil(t.pMax*mx)}));
+}
+
+function getTier(score){
+  const tiers=getTierRanges();
+  for(let i=tiers.length-1;i>=0;i--)if(score>=tiers[i].min)return{tier:tiers[i],idx:i,tiers};
+  return{tier:tiers[0],idx:0,tiers};
+}
+
+// ===== BUILD TABLE =====
+function buildTable(){
+  const cols=DAYS.length+2;
+  let h='<thead><tr><th class="task-header">משימה</th>';
+  DAYS.forEach((d,i)=>h+=`<th class="day-header${i===6?' shabbat':''}">${d}</th>`);
+  h+='<th class="total-header">סה״כ</th></tr></thead><tbody>';
+  TASKS.forEach(t=>{
+    h+=`<tr class="regular"><td class="task-name"><span class="emoji">${t.emoji}</span>${t.name}</td>`;
+    DAYS.forEach((_,di)=>{
+      h+='<td class="score-cell"><div class="score-buttons">';
+      for(let v=0;v<=5;v++)h+=`<button class="score-btn" data-task="${t.id}" data-day="${di}" data-val="${v}" onclick="toggleScore('${t.id}',${di},${v})">${v}</button>`;
+      h+='</div></td>';
+    });
+    h+=`<td class="row-total" id="rt_${t.id}"><div class="num">0</div><div class="max">מתוך 35</div></td></tr>`;
+  });
+  // Chug
+  h+=`<tr class="regular" id="chugRow"><td class="task-name"><span class="emoji">${CHUG.emoji}</span>${CHUG.name}</td>`;
+  DAYS.forEach((_,di)=>{
+    h+=`<td class="score-cell" id="chugCell_${di}"><div class="score-buttons" id="chugBtns_${di}">`;
+    for(let v=0;v<=5;v++)h+=`<button class="score-btn" data-task="chug" data-day="${di}" data-val="${v}" onclick="toggleScore('chug',${di},${v})">${v}</button>`;
+    h+=`</div><button class="no-chug-btn" id="noChug_${di}" onclick="toggleNoChug(${di})">אין חוג</button></td>`;
+  });
+  h+=`<td class="row-total" id="rt_chug"><div class="num">0</div><div class="max" id="chugMax"></div></td></tr>`;
+  // Separator
+  h+=`<tr class="separator"><td colspan="${cols}"></td></tr>`;
+  // Dry
+  h+=`<tr class="bonus" id="dryRow"><td class="task-name"><span class="emoji">${DRY.emoji}</span>${DRY.name}<span class="bonus-badge">₪ בונוס</span></td>`;
+  DAYS.forEach((_,di)=>{
+    h+=`<td class="score-cell"><div class="dry-check" id="dryChk_${di}" onclick="toggleDry(${di})"></div><div class="dry-amount" id="dryAmt_${di}"></div></td>`;
+  });
+  h+=`<td class="row-total"><div class="num" id="dryTotal">₪0</div><div class="max">בונוס כספי</div></td></tr>`;
+  // Day totals
+  h+='<tr class="day-totals"><td class="task-name">📊 סה״כ יומי</td>';
+  DAYS.forEach((_,i)=>h+=`<td class="row-total" id="dt_${i}"><div class="num">0</div><div class="max" id="dtMax_${i}"></div></td>`);
+  h+=`<td class="row-total"><div id="grand-total" class="num">0</div><div class="max" id="grandMax"></div></td></tr></tbody>`;
+  document.getElementById('mainTable').innerHTML=h;
+}
+
+// ===== UPDATE UI =====
+function updateUI(){
+  // Score buttons
+  document.querySelectorAll('.score-btn').forEach(b=>{
+    const t=b.dataset.task,d=+b.dataset.day,v=+b.dataset.val;
+    const sv=state.scores[t]?state.scores[t][d]:null;
+    b.classList.toggle('active',sv===v);
+  });
+  // Chug
+  DAYS.forEach((_,di)=>{
+    const btn=document.getElementById('noChug_'+di);
+    const cell=document.getElementById('chugBtns_'+di);
+    if(btn)btn.classList.toggle('active',!!state.noChug[di]);
+    if(cell)cell.classList.toggle('chug-disabled',!!state.noChug[di]);
+  });
+  // Row totals
+  TASKS.forEach(t=>{
+    const sum=DAYS.reduce((s,_,i)=>s+((state.scores[t.id]&&state.scores[t.id][i])||0),0);
+    const el=document.querySelector(`#rt_${t.id} .num`);
+    if(el)el.textContent=sum;
+  });
+  const chugActive=DAYS.filter((_,i)=>!state.noChug[i]);
+  const chugSum=DAYS.reduce((s,_,i)=>s+(state.noChug[i]?0:((state.scores[CHUG.id]&&state.scores[CHUG.id][i])||0)),0);
+  const chugNumEl=document.querySelector('#rt_chug .num');
+  if(chugNumEl)chugNumEl.textContent=chugSum;
+  const chugMaxEl=document.getElementById('chugMax');
+  if(chugMaxEl)chugMaxEl.textContent=`מתוך ${chugActive.length*5}`;
+
+  // Dry checkboxes
+  const dryDays=getDryDaysCount();
+  DAYS.forEach((_,di)=>{
+    const chk=document.getElementById('dryChk_'+di);
+    const amt=document.getElementById('dryAmt_'+di);
+    if(!chk)return;
+    chk.classList.toggle('checked',!!state.dry[di]);
+    chk.textContent=state.dry[di]?'✓':'';
+    amt.textContent=state.dry[di]?'₪20':'';
+    amt.classList.toggle('has',!!state.dry[di]);
+  });
+  const streak=getCurrentDryStreak();
+  const dryMoney=getDryMoney();
+  document.getElementById('dryTotal').textContent=`₪${dryMoney.toLocaleString()}`;
+  const dryRowEl=document.getElementById('dryRow');
+  dryRowEl.classList.toggle('full-streak',streak>=STREAK_TARGET);
+
+  // Streak visualization
+  updateStreakBox(streak);
+
+  // Dry money summary
+  const ds=document.getElementById('drySummary');
+  let dsHtml=`<div class="dry-label">🌈 בונוס ״קם יבש״ השבוע</div><div class="dry-total">₪${dryMoney.toLocaleString()}</div>`;
+  if(streak>=STREAK_TARGET)dsHtml+=`<div style="font-size:16px;color:#2E7D32;font-weight:800;margin-top:4px">🎉🎉🎉 ${STREAK_TARGET} ימים רצופים! מדהים! 🎉🎉🎉</div>`;
+  else dsHtml+=`<div class="dry-label">${dryDays} ימים יבשים השבוע</div>`;
+  ds.innerHTML=dsHtml;
+
+  // Day totals
+  const mx=getMaxScore();
+  DAYS.forEach((_,di)=>{
+    let ds2=TASKS.reduce((s,t)=>s+((state.scores[t.id]&&state.scores[t.id][di])||0),0);
+    if(!state.noChug[di])ds2+=((state.scores[CHUG.id]&&state.scores[CHUG.id][di])||0);
+    const dtNum=document.querySelector(`#dt_${di} .num`);
+    if(dtNum)dtNum.textContent=ds2;
+    const dayMax=TASKS.length*5+(state.noChug[di]?0:5);
+    const dtMax=document.getElementById('dtMax_'+di);
+    if(dtMax)dtMax.textContent=`מתוך ${dayMax}`;
+  });
+
+  const total=getPointsTotal();
+  const gt=document.getElementById('grand-total');
+  gt.textContent=total;
+  document.getElementById('grandMax').textContent=`מתוך ${mx}`;
+
+  // Tier
+  const{tier,idx,tiers}=getTier(total);
+  gt.style.color=tier.color;
+  const box=document.getElementById('tierBox');
+  box.style.background=tier.bg;box.style.borderColor=tier.color;
+  document.getElementById('tierLabel').textContent=tier.label;
+  document.getElementById('tierLabel').style.color=tier.color;
+  const pct=mx>0?(total/mx)*100:0;
+  const fill=document.getElementById('progressFill');
+  fill.style.width=pct+'%';
+  fill.style.background=`hsl(${Math.round(pct/100*120)},70%,50%)`;
+  document.getElementById('tierReward').innerHTML=`🎁 הפרס: <strong style="color:${tier.color}">${tier.reward}</strong>`;
+  const nx=document.getElementById('tierNext');
+  if(total>0&&idx<tiers.length-1){nx.textContent=`עוד ${tiers[idx+1].min-total} נקודות לשלב הבא!`;nx.style.display='';}
+  else nx.style.display='none';
+
+  buildLegend(total,tiers);
+  updateEncouragement();
+}
+
+function updateStreakBox(streak){
+  const box=document.getElementById('streakBox');
+  let dots='';
+  for(let i=1;i<=STREAK_TARGET;i++){
+    dots+=`<div class="streak-dot${i<=streak?' filled':''}">${i<=streak?'✓':i}</div>`;
+  }
+  let info='';
+  if(streak>=STREAK_TARGET){
+    info=`<div class="streak-info"><div class="streak-celebration">🎉 ₪1,000! 🎉</div><div class="streak-label">${streak} ימים רצופים!</div></div>`;
+  }else{
+    info=`<div class="streak-info"><div class="streak-count">${streak}/${STREAK_TARGET}</div><div class="streak-label">ימים רצופים</div><div class="streak-reward">עוד ${STREAK_TARGET-streak} ימים ל-₪1,000!</div></div>`;
+  }
+  box.innerHTML=`<div class="streak-visual">${dots}</div>${info}`;
+}
+
+function buildLegend(total,tiers){
+  let h='<div class="legend-title">🎯 טווחי הפרסים:</div>';
+  tiers.forEach(t=>{
+    const a=total>=t.min&&total<=t.max;
+    h+=`<div class="legend-row${a?' active':''}" style="background:${a?t.bg:'#FAFAFA'};border-color:${a?t.color:'#E0E0E0'}${a?';border-width:2px':''}"><span class="legend-range" style="color:${t.color}">${t.min}–${t.max}</span><span class="legend-label" style="color:${t.color}">${t.label}</span><span class="legend-desc">${t.reward}</span></div>`;
+  });
+  document.getElementById('legend').innerHTML=h;
+}
+
+function updateEncouragement(){
+  const n=state.childName||document.getElementById('childName').value;
+  document.getElementById('encouragement').textContent=n?`יאללה ${n}, אפשר לעשות את זה! 💪`:'';
+}
+
+// ===== GRAPH =====
+function updateGraph(){
+  const keys=Object.keys(archive).sort();
+  const container=document.getElementById('graphContainer');
+  const title=document.getElementById('graphTitle');
+  if(keys.length===0){
+    container.innerHTML='<div class="no-history">עדיין אין היסטוריה — סיימו שבוע ראשון כדי לראות גרף!</div>';
+    return;
+  }
+  title.textContent=`📈 התקדמות שבועית (${keys.length} שבועות)`;
+  const maxPts=Math.max(...keys.map(k=>archive[k].totalPoints||0),1);
+  let bars='';
+  const colors=['#42A5F5','#66BB6A','#FFA726','#AB47BC','#EF5350','#26C6DA','#FF7043','#9CCC65'];
+  keys.forEach((k,i)=>{
+    const w=archive[k];
+    const pts=w.totalPoints||0;
+    const pct=Math.max((pts/maxPts)*100,3);
+    const mxW=w.maxScore||245;
+    const label=w.weekLabel||k;
+    const c=colors[i%colors.length];
+    const pctOfMax=mxW>0?Math.round((pts/mxW)*100):0;
+    bars+=`<div class="graph-bar-wrap"><div class="graph-bar-value" style="color:${c}">${pts}<span style="font-size:9px;color:#90A4AE">/${mxW}</span></div><div class="graph-bar" style="height:${pct}%;background:${c}"></div><div class="graph-bar-label">${label}</div></div>`;
+  });
+  container.innerHTML=`<div class="graph-bars">${bars}</div>`;
+}
+
+// ===== ARCHIVE =====
+function archiveWeek(){
+  if(!confirm('לסיים את השבוע ולשמור בארכיון?'))return;
+  const total=getPointsTotal();
+  const mx=getMaxScore();
+  const dryDays=getDryDaysCount();
+  const streak=getCurrentDryStreak();
+  const dryMoney=getDryMoney();
+
+  // Calculate carry streak for next week
+  // Count consecutive dry days at END of week
+  let endStreak=0;
+  for(let i=6;i>=0;i--){
+    if(state.dry[i])endStreak++;
+    else break;
+  }
+  // If all 7 days dry AND carried from before, total carry = carry + 7
+  let newCarry=0;
+  if(state.dry[0]&&meta.carryStreak>0){
+    // The full streak was carry + consecutive from start
+    // Carry forward = if all 7 dry, carry+7, else just endStreak
+    let allDry=true;
+    for(let i=0;i<7;i++)if(!state.dry[i]){allDry=false;break;}
+    newCarry=allDry?(meta.carryStreak+7):endStreak;
+  }else{
+    newCarry=endStreak;
+  }
+
+  // Check if streak hit target this week — if so, reset carry after bonus
+  if(streak>=STREAK_TARGET){
+    // Bonus achieved! Reset carry but keep endStreak of current week post-target
+    // For simplicity: reset to endStreak (days after the 10th)
+    const totalStreakDays=state.dry[0]?(meta.carryStreak+DAYS.filter((_,i)=>state.dry[i]&&i<7).length):endStreak;
+    newCarry=totalStreakDays>=STREAK_TARGET?endStreak:endStreak;
+    // Actually after hitting 10, we reset. The carry is whatever's left at the end.
+    newCarry=endStreak; // Simple: just carry the end streak
+  }
+
+  const weekKey=state.weekLabel||new Date().toISOString().slice(0,10);
+  const archiveData={
+    scores:state.scores,
+    dry:state.dry,
+    noChug:state.noChug,
+    totalPoints:total,
+    maxScore:mx,
+    dryDays:dryDays,
+    dryMoney:dryMoney,
+    dryStreak:streak,
+    weekLabel:state.weekLabel,
+    childName:state.childName,
+    endDate:new Date().toISOString().slice(0,10)
+  };
+
+  // Write to Firebase
+  const safeKey=weekKey.replace(/[.#$\[\]\/]/g,'_');
+  db.ref(`archive/${safeKey}`).set(archiveData);
+  db.ref('meta/carryStreak').set(newCarry);
+
+  // Reset current week
+  const fresh=defaultState();
+  fresh.childName=state.childName;
+  db.ref('currentWeek').set(fresh);
+
+  showToast('syncToast','📦 השבוע נשמר בארכיון!');
+}
+
+function resetOnly(){
+  if(!confirm('בטוח? כל הניקוד של השבוע יימחק (לא נשמר בארכיון).'))return;
+  const fresh=defaultState();
+  fresh.childName=state.childName;
+  db.ref('currentWeek').set(fresh);
+  db.ref('meta/carryStreak').set(0);
+  showToast('syncToast','🔄 אופס!');
+}
+
+function showToast(id,msg){
+  const t=document.getElementById(id);
+  t.textContent=msg;
+  t.classList.add('show');
+  setTimeout(()=>t.classList.remove('show'),1500);
+}
+
+// ===== INIT =====
+buildTable();
+</script>
+</body>
+</html>
